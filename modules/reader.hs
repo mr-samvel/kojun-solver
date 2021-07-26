@@ -14,12 +14,13 @@ splitWhen condition str = case dropWhile condition str of
 readPuzzle :: FilePath -> IO (Grid, Grid)
 readPuzzle p = do
     puz <- readFile p
-    return (lineProcessing (lines puz))
+    return $ lineProcessing $ lines puz
 
 -- processamento lento, pensar em melhoria!
 lineProcessing :: [[Char]] -> (Grid, Grid)
 lineProcessing xs = ([splitElementsOfBoardStr (words x) 0 | x <- xs], [splitElementsOfBoardStr (words x) 1 | x <- xs])
 
+-- ex: splitElementsOfBoardStr [["A,B", "C,D"], ["E,F", "G,H"]] 0 -> [[A, C], [E, G]]
 splitElementsOfBoardStr :: [String] -> Int -> [Int]
 splitElementsOfBoardStr [] _ = []
 splitElementsOfBoardStr (element : list) pos = [value] ++ splitElementsOfBoardStr list pos
