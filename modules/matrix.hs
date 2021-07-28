@@ -17,16 +17,15 @@ cols :: Matrix a -> [Row a]
 cols m = transpose m
 
 -- retorna os blocos em forma de linhas
-blocks :: Eq a => (Matrix a, Matrix a) -> [Row a]
-blocks (vals, pos) = [filterByGroup group tupleValueGroup | group <- groups]
+blocks :: Eq a => Matrix a -> Matrix a -> [Row a]
+blocks vals pos = [filterByGroup group tupleValueGroup | group <- groups]
   where
     tupleValueGroup = foldl1 (++) $ zipWith zip vals pos
     groups = nub $ map snd tupleValueGroup
     filterByGroup group list = map fst $ filter ((== group) . snd) list
 
 
--- -- retorna os blocos em forma de matrizes
--- blocksAsMatrix :: (Matrix a, Matrix a) -> [Matrix a]
-
-
-
+colsByBlocks :: Eq a => Matrix a -> Matrix a -> [Row a]
+colsByBlocks vals pos = zip (cols vals) (cols pos) >>= (\(v, p) -> blocks [v] [p])
+-- equivalente a: concat [blocks ([v], [p]) | (v, p) <- zip (cols vals) (cols pos)]
+-- >>= : [a] -> (a -> [b]) -> [b]

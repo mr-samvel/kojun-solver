@@ -8,6 +8,14 @@ import Matrix
 
 -- type Choices = [Value]
 
+-- -- primeira solução - INEFICIENTE
+-- -- cria uma matriz com todas as escolhas possiveis,
+-- -- aplica prune n vezes, até nao ser mais possível reduzir o numero de escolhas pra cada celula
+-- -- extrai todas as matrizes pra cada escolha
+-- -- filtra por essas matrizes até achar uma válida
+-- solve :: Grid -> [Grid]
+-- solve = filter valid . collapse . fix prune . choices
+
 -- valid :: Grid -> Bool
 -- valid g = all noDuplicates (rows g) &&
 --           all noDuplicates (cols g) &&
@@ -51,13 +59,12 @@ import Matrix
 -- fix f x = if x == x' then x else fix f x'
 --     where x' = f x
 
--- -- primeira solução - INEFICIENTE
--- -- cria uma matriz com todas as escolhas possiveis,
--- -- aplica prune n vezes, até nao ser mais possível reduzir o numero de escolhas pra cada celula
--- -- extrai todas as matrizes pra cada escolha
--- -- filtra por essas matrizes até achar uma válida
--- solve :: Grid -> [Grid]
--- solve = filter valid . collapse . fix prune . choices
+-- ---------------------- solucao 2
+-- -- expanding choices one square at
+-- -- a time, and filtering out any resulting matrices that are blocked
+-- -- before considering any further choices.
+-- solve2 :: Grid -> [Grid]
+-- solve = search . prune . choices
 
 -- -- verifica se ha alguma celula vazia na matriz
 -- void :: Matrix Choices -> Bool
@@ -77,25 +84,19 @@ import Matrix
 -- blocked :: Matrix Choices -> Bool
 -- blockes m = void m || not (safe m)
 
--- -- expanding choices one square at
--- -- a time, and filtering out any resulting matrices that are blocked
--- -- before considering any further choices.
--- solve2 :: Grid -> [Grid]
--- solve = search . prune . choices
-
 -- search :: Matrix Choices -> [Grid]
 -- search m
 --     | blocked m = []
 --     | all (all single) m = collapse m
 --     | otherwise = [g | m' <- expand m, g <- search (prune m')]
 
--- retorna true se a lista passada só possui um elemento
+-- --retorna true se a lista passada só possui um elemento
 -- single :: [a] -> Bool
 -- single [_] = true
 -- single _ = false
 
--- The function expand behaves in the same way as collapse, except that
--- it only collapses the first square with more than one choice:
+-- --The function expand behaves in the same way as collapse, except that
+-- --it only collapses the first square with more than one choice:
 -- expand :: Matrix Choices -> [Matrix Choices]
 -- expand m = [rows1 ++ [row1 ++ [c] : row2] ++ rows2 | c <- cs]
 --     where
@@ -115,4 +116,5 @@ main = do
     (tabuleiro, posicoes) <- readPuzzle "tabuleiro.txt"
     -- print tabuleiro
     -- print posicoes
-    print $ blocks (tabuleiro, posicoes)
+    print $ blocks tabuleiro posicoes
+    print $ colsByBlocks tabuleiro posicoes
