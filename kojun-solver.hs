@@ -1,7 +1,5 @@
--- Módulo principal
 module Main where
 
--- Importa módulos auxiliares
 import Reader
 import Matrix
 
@@ -42,12 +40,16 @@ import Matrix
 -- -- de uma linha, reduz as escolhas com base em elementos unitários
 -- -- ex: ["1 2 3 4", "1", "3 4", "3"] -> ["2 4", "1", "4", "3"]
 -- reduce :: Row Choices -> Row Choices
+-- reduce xss = [xs `minus` singles | xs <- xss]
+--     where singles = concat (filter single xss)
+
+-- minus :: Choices -> Choices -> Choices
+-- xs `minus` ys = if single xs then xs else xs \\ ys
 
 -- -- itera a função (a -> a) no parametro de entrada até a saída ser igual a ele
 -- fix :: Eq a => (a -> a) -> a -> a
 -- fix f x = if x == x' then x else fix f x'
 --     where x' = f x
-
 
 -- -- primeira solução - INEFICIENTE
 -- -- cria uma matriz com todas as escolhas possiveis,
@@ -56,6 +58,50 @@ import Matrix
 -- -- filtra por essas matrizes até achar uma válida
 -- solve :: Grid -> [Grid]
 -- solve = filter valid . collapse . fix prune . choices
+
+-- -- verifica se ha alguma celula vazia na matriz
+-- void :: Matrix Choices -> Bool
+-- void m = any (any null) m
+
+-- -- verifica se todos os campos sao consistentes (nao possuem valores unitarios duplicados)
+-- safe :: Matrix Choices -> Bool
+-- safe m = all consistent (rows m) &&
+--          all consistent (cols m) &&
+--          all consistent (boxes m)
+
+-- -- verifica se não há valores unitarios duplicados na linha passada
+-- consistent :: Row Choices -> Bool
+-- consistent = nodups . concat . filter single
+
+-- -- matrizes bloqueadas nunca podem fornecer uma solução
+-- blocked :: Matrix Choices -> Bool
+-- blockes m = void m || not (safe m)
+
+-- -- expanding choices one square at
+-- -- a time, and filtering out any resulting matrices that are blocked
+-- -- before considering any further choices.
+-- solve2 :: Grid -> [Grid]
+-- solve = search . prune . choices
+
+-- search :: Matrix Choices -> [Grid]
+-- search m
+--     | blocked m = []
+--     | all (all single) m = collapse m
+--     | otherwise = [g | m' <- expand m, g <- search (prune m')]
+
+-- retorna true se a lista passada só possui um elemento
+-- single :: [a] -> Bool
+-- single [_] = true
+-- single _ = false
+
+-- The function expand behaves in the same way as collapse, except that
+-- it only collapses the first square with more than one choice:
+-- expand :: Matrix Choices -> [Matrix Choices]
+-- expand m = [rows1 ++ [row1 ++ [c] : row2] ++ rows2 | c <- cs]
+--     where
+--         (rows1,row:rows2) = break (any (not . single)) m
+--         (row1,cs:row2)    = break (not . single) row
+
 ------------------------------------------------------------------------------
 
 ------------------------------------------------------------------------------

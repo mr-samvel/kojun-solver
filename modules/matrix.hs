@@ -18,11 +18,11 @@ cols m = transpose m
 
 -- retorna os blocos em forma de linhas
 blocks :: Eq a => (Matrix a, Matrix a) -> [Row a]
-blocks (vals, pos) = map ((\a -> a r) . f) ns
-    where
-        ns = nub $ map snd r
-        r = foldl1 (++) $ zipWith zip vals pos
-        f n l = map fst $ filter (\(a, b) -> b == n) l
+blocks (vals, pos) = [filterByGroup group tupleValueGroup | group <- groups]
+  where
+    tupleValueGroup = foldl1 (++) $ zipWith zip vals pos
+    groups = nub $ map snd tupleValueGroup
+    filterByGroup group list = map fst $ filter ((== group) . snd) list
 
 
 -- -- retorna os blocos em forma de matrizes
