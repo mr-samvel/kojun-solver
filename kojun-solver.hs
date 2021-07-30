@@ -14,16 +14,20 @@ type Choices = [Value]
 -- solve :: Grid -> Grid -> [Grid]
 -- solve vals pos = search (prune (choices vals pos) pos) pos
 
+
 -- -- primeira solução - INEFICIENTE
 -- -- cria uma matriz com todas as escolhas possiveis,
 -- -- aplica prune n vezes, até nao ser mais possível reduzir o numero de escolhas pra cada celula
 -- -- extrai todas as matrizes pra cada escolha
 -- -- filtra por essas matrizes até achar uma válida
--- solve :: Grid -> [Grid]
--- solve = filter valid . collapse . fix prune . choices
-
 solve :: Grid -> Grid -> [Grid]
-solve vals pos = filter (`safe` pos) (collapse (fix (`prune` pos) (choices vals pos)))
+solve vals pos = filter (`valid` pos) (collapse (fix (`prune` pos) (choices vals pos)))
+
+valid :: Grid -> Grid -> Bool
+valid vals pos = all validNeighborhood (cols vals) &&
+        all validNeighborhood (rows vals) &&
+        all nodups (blocks vals pos) &&
+        all isDecreasing (blocksByCols vals pos)
 
 -- itera a função (a -> a) no parametro de entrada até a saída ser igual a ele
 fix :: Eq a => (a -> a) -> a -> a
@@ -33,7 +37,7 @@ fix f x = if x == x' then x else fix f x'
 -- preenche cada celula sem valor com uma lista de 1..9
 choices :: Grid -> Grid -> Matrix Choices
 choices vals pos = map (map choice) (zipWith zip vals pos)
-    where choice (v, p) = if v == 0 then [1..(lengthOfBlock p pos)] else [v]
+    where choice (v, p) = if v == 0 then [1..(lengthOfBlock p pos)] `minus` (valsOfBlock vals pos p) else [v]
 
 -- de uma matriz, elimina das escolhas os valores que já foram utilizados no bloco, coluna e linha
 prune :: Matrix Choices -> Grid -> Matrix Choices
@@ -53,11 +57,11 @@ single :: [a] -> Bool
 single [_] = True
 single _ = False
 
-search :: Matrix Choices -> Grid -> [Grid]
-search m pos
-    | blocked m pos = []
-    | all (all single) m = collapse m
-    | otherwise = [g | m' <- expand m, g <- search (prune m' pos) pos]
+-- search :: Matrix Choices -> Grid -> [Grid]
+-- search m pos
+--     | blocked m pos = []
+--     | all (all single) m = collapse m
+--     | otherwise = [g | m' <- expand m, g <- search (prune m' pos) pos]
 
 -- matrizes bloqueadas nunca podem fornecer uma solução
 blocked :: Matrix Choices -> Grid -> Bool
@@ -120,13 +124,6 @@ expand m = [rows1 ++ [row1 ++ [c] : row2] ++ rows2 | c <- cs]
 ------------------------------------------------------------------------------
 
 main = do
-    (tabuleiro, posicoes) <- readPuzzle "tabuleiro.txt"
-    -- print tabuleiro
-    -- print posicoes
-    -- print $ blocks tabuleiro posicoes
-    -- print $ blocksByCols tabuleiro posicoes
-    -- print $ lengthOfBlock 1 posicoes
-    -- print $ choices tabuleiro posicoes
-    -- print $ cols $ colsOfBlocksByCols (blocksByCols tabuleiro posicoes) (size tabuleiro)
-    print $ solve tabuleiro posicoes
+    (vals, pos) <- readPuzzle "tabuleiro6x6.txt"
+    print $ solve vals pos
     
