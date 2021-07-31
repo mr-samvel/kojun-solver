@@ -9,25 +9,17 @@ type Choices = [Value]
 -- ---------------------- solucao 2
 -- -- expanding choices one square at
 -- -- a time, and filtering out any resulting matrices that are blocked
--- -- before considering any further choices.
--- -- solve :: Grid -> [Grid]
--- solve :: Grid -> Grid -> [Grid]
--- solve vals pos = search (prune (choices vals pos) pos) pos
-
+-- -- before considering any further choices
+solve :: Grid -> Grid -> [Grid]
+solve vals pos = search (prune (choices vals pos) pos) pos
 
 -- -- primeira solução - INEFICIENTE
 -- -- cria uma matriz com todas as escolhas possiveis,
 -- -- aplica prune n vezes, até nao ser mais possível reduzir o numero de escolhas pra cada celula
 -- -- extrai todas as matrizes pra cada escolha
 -- -- filtra por essas matrizes até achar uma válida
-solve :: Grid -> Grid -> [Grid]
-solve vals pos = filter (`valid` pos) (collapse (fix (`prune` pos) (choices vals pos)))
-
-valid :: Grid -> Grid -> Bool
-valid vals pos = all validNeighborhood (cols vals) &&
-        all validNeighborhood (rows vals) &&
-        all nodups (blocks vals pos) &&
-        all isDecreasing (blocksByCols vals pos)
+-- solve :: Grid -> Grid -> [Grid]
+-- solve vals pos = filter (`valid` pos) (collapse (fix (`prune` pos) (choices vals pos)))
 
 -- itera a função (a -> a) no parametro de entrada até a saída ser igual a ele
 fix :: Eq a => (a -> a) -> a -> a
@@ -57,11 +49,11 @@ single :: [a] -> Bool
 single [_] = True
 single _ = False
 
--- search :: Matrix Choices -> Grid -> [Grid]
--- search m pos
---     | blocked m pos = []
---     | all (all single) m = collapse m
---     | otherwise = [g | m' <- expand m, g <- search (prune m' pos) pos]
+search :: Matrix Choices -> Grid -> [Grid]
+search m pos
+    | blocked m pos = []
+    | all (all single) m = collapse m
+    | otherwise = [g | m' <- expand m, g <- search (prune m' pos) pos]
 
 -- matrizes bloqueadas nunca podem fornecer uma solução
 blocked :: Matrix Choices -> Grid -> Bool
@@ -73,28 +65,31 @@ void m = any (any null) m
 
 -- verifica se todos os campos sao consistentes (nao possuem valores unitarios duplicados)
 safe :: Matrix Choices -> Grid -> Bool
-safe m pos = all (check validNeighborhood) (cols m) &&
-        all (check validNeighborhood) (rows m) &&
-        all (check nodups) (blocks m pos) &&
-        all (check isDecreasing) (blocksByCols m pos)
-            where check f = f . concat . filter single
+safe m pos = all (validNeighborhood) (cols m) &&
+        all (validNeighborhood) (rows m) &&
+        all (nodups) (blocks m pos) &&
+        all (isDecreasing) (blocksByCols m pos)
 
 -- verifica se nao ha valores vizinhos iguais
-validNeighborhood :: Eq a => [a] -> Bool
+validNeighborhood :: Eq a => Row [a] -> Bool
 validNeighborhood [] = True
 validNeighborhood [a] = True
-validNeighborhood (a:b:bs) = if a == b then False else validNeighborhood bs
+validNeighborhood (a:b:bs) 
+    | (length a <= 1) && (length b <= 1) = if a == b then False else validNeighborhood (b:bs)
+    | otherwise = validNeighborhood (b:bs)
 
 -- verifica se não há valores unitarios duplicados na linha passada
-nodups :: Eq a => [a] -> Bool
+nodups :: Eq a => Row [a] -> Bool
 nodups [] = True
-nodups (x:xs) = not (elem x xs) && nodups xs
+nodups (x:xs) = if (length x <= 1) then not (elem x xs) && nodups xs else nodups xs
 
 -- verifica se nao ha valores vizinhos iguais
-isDecreasing :: Ord a => [a] -> Bool
+isDecreasing :: Ord a => Row [a] -> Bool
 isDecreasing [] = True
 isDecreasing [a] = True
-isDecreasing (a:b:bs) = if a < b then False else isDecreasing bs
+isDecreasing (a:b:bs) 
+    | (length a <= 1) && (length b <= 1) = if a < b then False else isDecreasing bs
+    | otherwise = isDecreasing bs
 
 -- retorna uma lista contendo todas as matrizes de solução possíveis
 collapse :: Matrix [a] -> [Matrix a]
@@ -124,6 +119,23 @@ expand m = [rows1 ++ [row1 ++ [c] : row2] ++ rows2 | c <- cs]
 ------------------------------------------------------------------------------
 
 main = do
-    (vals, pos) <- readPuzzle "tabuleiro6x6.txt"
+    board <- getLine
+    (vals, pos) <- readPuzzle board
+    --solve vals pos = search (prune (choices vals pos) pos) pos
+    -- solve vals pos = filter (`valid` pos) (collapse (fix (`prune` pos) (choices vals pos)))
+    -- print $ choices vals pos
+    -- print $ lengthOfBlock 2 pos
+    -- print $ valsOfBlock vals pos 2
+    -- `minus` (valsOfBlock vals pos p)
+    --print $ prune (choices vals pos) pos
+    --print $ expand (prune (choices vals pos) pos)
+    --print $ blocked (prune (choices vals pos) pos) pos
+    --print $ search (prune (choices vals pos) pos) pos
+    -- let a = [[[2],[1,3],[2]],[[1],[2],[1,3]],[[4],[1,3],[1,3]]]
+    -- print $ safe a pos
+    -- print $ map (typeOf) a
+    -- print $ [g | m' <- expand (prune (choices vals pos) pos), g <- search (prune m' pos) pos]
+    -- let a = [m | m <- expand (prune (choices vals pos) pos)]
+    -- print $ map (`blocked` pos) a
+    -- let a = [[[2],[5],[1],[4],[3],[4],[1],[2]],[[1],[3],[6],[2],[6],[3],[2],[1]],[[3],[1],[5],[1],[5],[2],[3],[5]],[[2],[3],[4],[2],[3],[1],[2],[1]],[[1],[2],[1],[3],[4],[2],[4],[5]],[[3],[1],[2],[1],[5],[4],[1],[3]],[[1],[5],[1],[6],[3],[2],[5],[4]],[[2],[4],[2],[1],[4],[1],[3],[2]]]
     print $ solve vals pos
-    

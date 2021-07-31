@@ -28,7 +28,10 @@ blocks vals pos = [filterByGroup group tupleValueGroup | group <- groups]
     filterByGroup group list = map fst $ filter ((== group) . snd) list
 
 valsOfBlock :: Eq a => Matrix a -> Grid -> Int -> Row a
-valsOfBlock vals pos id = (blocks vals pos)!!(id)
+valsOfBlock vals pos id = map fst $ filter ((==id) . snd) tupleValueGroup 
+  where
+    tupleValueGroup = foldl1 (++) (zipWith zip vals pos)
+    
 
 blocksByCols :: Eq a => Matrix a -> Grid -> [Row a]
 blocksByCols vals pos = zip (cols vals) (cols pos) >>= (\(v, p) -> blocks [v] [p])
