@@ -33,7 +33,7 @@ choices vals pos = map (map choice) (zipWith zip vals pos)
 
 -- de uma matriz, elimina das escolhas os valores que já foram utilizados no bloco, coluna e linha
 prune :: Matrix Choices -> Grid -> Matrix Choices
-prune vals pos = cols $ colsOfBlocksByCols (map reduce (blocksByCols vals pos)) (size vals)
+prune vals pos = cols $ colsOfBlocksByCols (map reduce (blocks2 vals pos)) (size vals)
 
 -- de uma linha, reduz as escolhas com base em elementos unitários
 -- ex: ["1 2 3 4", "1", "3 4", "3"] -> ["2 4", "1", "4", "3"]
@@ -68,7 +68,7 @@ safe :: Matrix Choices -> Grid -> Bool
 safe m pos = all (validNeighborhood) (cols m) &&
         all (validNeighborhood) (rows m) &&
         all (nodups) (blocks m pos) &&
-        all (isDecreasing) (blocksByCols m pos)
+        all (isDecreasing) (blocks2 m pos)
 
 -- verifica se nao ha valores vizinhos iguais
 validNeighborhood :: Eq a => Row [a] -> Bool
@@ -88,8 +88,8 @@ isDecreasing :: Ord a => Row [a] -> Bool
 isDecreasing [] = True
 isDecreasing [a] = True
 isDecreasing (a:b:bs) 
-    | (length a <= 1) && (length b <= 1) = if a < b then False else isDecreasing bs
-    | otherwise = isDecreasing bs
+    | (length a <= 1) && (length b <= 1) = if a < b then False else isDecreasing (b:bs)
+    | otherwise = isDecreasing (b:bs)
 
 -- retorna uma lista contendo todas as matrizes de solução possíveis
 collapse :: Matrix [a] -> [Matrix a]
@@ -121,21 +121,8 @@ expand m = [rows1 ++ [row1 ++ [c] : row2] ++ rows2 | c <- cs]
 main = do
     board <- getLine
     (vals, pos) <- readPuzzle board
-    --solve vals pos = search (prune (choices vals pos) pos) pos
-    -- solve vals pos = filter (`valid` pos) (collapse (fix (`prune` pos) (choices vals pos)))
-    -- print $ choices vals pos
-    -- print $ lengthOfBlock 2 pos
-    -- print $ valsOfBlock vals pos 2
-    -- `minus` (valsOfBlock vals pos p)
-    --print $ prune (choices vals pos) pos
-    --print $ expand (prune (choices vals pos) pos)
-    --print $ blocked (prune (choices vals pos) pos) pos
-    --print $ search (prune (choices vals pos) pos) pos
-    -- let a = [[[2],[1,3],[2]],[[1],[2],[1,3]],[[4],[1,3],[1,3]]]
-    -- print $ safe a pos
-    -- print $ map (typeOf) a
-    -- print $ [g | m' <- expand (prune (choices vals pos) pos), g <- search (prune m' pos) pos]
-    -- let a = [m | m <- expand (prune (choices vals pos) pos)]
-    -- print $ map (`blocked` pos) a
-    -- let a = [[[2],[5],[1],[4],[3],[4],[1],[2]],[[1],[3],[6],[2],[6],[3],[2],[1]],[[3],[1],[5],[1],[5],[2],[3],[5]],[[2],[3],[4],[2],[3],[1],[2],[1]],[[1],[2],[1],[3],[4],[2],[4],[5]],[[3],[1],[2],[1],[5],[4],[1],[3]],[[1],[5],[1],[6],[3],[2],[5],[4]],[[2],[4],[2],[1],[4],[1],[3],[2]]]
     print $ solve vals pos
+
+
+
+    

@@ -36,6 +36,11 @@ valsOfBlock vals pos id = map fst $ filter ((==id) . snd) tupleValueGroup
 blocksByCols :: Eq a => Matrix a -> Grid -> [Row a]
 blocksByCols vals pos = zip (cols vals) (cols pos) >>= (\(v, p) -> blocks [v] [p])
 
+blocks2 :: Eq a => Matrix a -> Grid -> [Row a]
+blocks2 vals pos =  zipWith zip (cols vals) (cols pos) >>= map (map fst) . groupBy (\a b -> snd a == snd b)
+
+
+
 lengthOfBlock :: Eq a => a -> Matrix a -> Int
 lengthOfBlock _ [] = 0
 lengthOfBlock id pos = sum [count id p | p <- pos]
