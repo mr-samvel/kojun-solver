@@ -6,6 +6,8 @@ import Data.List
 
 type Choices = [Value]
 
+-- Solucao baseada na de Graham Hutton. Disponível em: http://www.cs.nott.ac.uk/~pszgmh/sudoku.lhs
+
 -- Recebe a matriz de valores e de posições lida do documento de texto.
 -- Retorna a primeira solução encontrada para o tabuleiro.
 solve :: Grid -> Grid -> Grid
