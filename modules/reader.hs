@@ -11,17 +11,20 @@ splitWhen condition str = case dropWhile condition str of
                     str' -> splitted: splitWhen condition str''
                         where (splitted, str'') = break condition str'
 
+-- Lê o arquivo indicado em FilePath
+-- Retorna duas matrizes:
+-- -- A primeira matriz (chamamos de matriz de valores) contém o valor da célula ou 0;
+-- -- A segunda matriz (chamamos de matriz de posições) contém o número do bloco associado à célula.
 readPuzzle :: FilePath -> IO (Grid, Grid)
 readPuzzle p = do
     puz <- readFile p
-    return $ lineProcessing $ lines puz
+    return $ lineProcessing (lines puz)
 
--- processamento lento, pensar em melhoria!
 lineProcessing :: [[Char]] -> (Grid, Grid)
-lineProcessing xs = ([splitElementsOfBoardStr (words x) 0 | x <- xs], [splitElementsOfBoardStr (words x) 1 | x <- xs])
+lineProcessing xs = ([splitElements (words x) 0 | x <- xs], [splitElements (words x) 1 | x <- xs])
 
--- ex: splitElementsOfBoardStr [["A,B", "C,D"], ["E,F", "G,H"]] 0 -> [[A, C], [E, G]]
-splitElementsOfBoardStr :: [String] -> Int -> [Int]
-splitElementsOfBoardStr [] _ = []
-splitElementsOfBoardStr (element : list) pos = [value] ++ splitElementsOfBoardStr list pos
+-- ex: splitElements [["A,B", "C,D"], ["E,F", "G,H"]] 0 -> [[A, C], [E, G]]
+splitElements :: [String] -> Int -> [Int]
+splitElements [] _ = []
+splitElements (element : list) pos = [value] ++ splitElements list pos
     where value = read ((splitWhen (==',') element)!!pos) :: Int

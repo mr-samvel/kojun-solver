@@ -1,6 +1,0 @@
-jogo escolhido: Kojun
-
- - receber tabuleiro via documento de texto;
- - a partir do documento, montar duas matrizes:
-    -> a primeira contem os valores do tabuleiro
-    -> a segunda contem os grupos

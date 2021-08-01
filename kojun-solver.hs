@@ -3,39 +3,29 @@ module Main where
 import Reader
 import Matrix
 import Data.List
------------------------------------------------------------------------------
+
 type Choices = [Value]
 
--- ---------------------- solucao 2
--- -- expanding choices one square at
--- -- a time, and filtering out any resulting matrices that are blocked
--- -- before considering any further choices
-solve :: Grid -> Grid -> [Grid]
-solve vals pos = search (prune (choices vals pos) pos) pos
+-- Recebe a matriz de valores e de posições lida do documento de texto.
+-- Retorna a primeira solução encontrada para o tabuleiro.
+solve :: Grid -> Grid -> Grid
+solve vals pos = (search (prune (choices vals pos) pos) pos)!!0
 
--- -- primeira solução - INEFICIENTE
--- -- cria uma matriz com todas as escolhas possiveis,
--- -- aplica prune n vezes, até nao ser mais possível reduzir o numero de escolhas pra cada celula
--- -- extrai todas as matrizes pra cada escolha
--- -- filtra por essas matrizes até achar uma válida
--- solve :: Grid -> Grid -> [Grid]
--- solve vals pos = filter (`valid` pos) (collapse (fix (`prune` pos) (choices vals pos)))
-
--- itera a função (a -> a) no parametro de entrada até a saída ser igual a ele
-fix :: Eq a => (a -> a) -> a -> a
-fix f x = if x == x' then x else fix f x'
-    where x' = f x
-
--- preenche cada celula sem valor com uma lista de 1..9
+-- Recebe uma matriz de valores e a matriz de posições.
+-- Retorna uma matriz de escolhas.
+-- Preenche cada celula sem valor com uma lista contendo valores possíveis para aquela célula.
+-- Essa lista vai de 1 até o tamanho do bloco correspondente a célula, excluindo valores pré-existentes no bloco.
 choices :: Grid -> Grid -> Matrix Choices
 choices vals pos = map (map choice) (zipWith zip vals pos)
     where choice (v, p) = if v == 0 then [1..(lengthOfBlock p pos)] `minus` (valsOfBlock vals pos p) else [v]
 
--- de uma matriz, elimina das escolhas os valores que já foram utilizados no bloco, coluna e linha
+-- Recebe uma matriz de escolhas e a matriz de posições.
+-- Aplica a função reduce para cada coluna dividida por blocos.
+-- Retorna essa matriz de escolhas com escolhas reduzidas.
 prune :: Matrix Choices -> Grid -> Matrix Choices
-prune vals pos = cols $ colsOfBlocksByCols (map reduce (blocks2 vals pos)) (size vals)
+prune vals pos = cols $ colsOfBlocksByCols (map reduce (blocksByCols vals pos)) (size vals)
 
--- de uma linha, reduz as escolhas com base em elementos unitários
+-- De uma linha contendo escolhas, reduz as escolhas com base em elementos unitários
 -- ex: ["1 2 3 4", "1", "3 4", "3"] -> ["2 4", "1", "4", "3"]
 reduce :: Row Choices -> Row Choices
 reduce xss = [xs `minus` singles | xs <- xss]
@@ -44,33 +34,47 @@ reduce xss = [xs `minus` singles | xs <- xss]
 minus :: Choices -> Choices -> Choices
 xs `minus` ys = if single xs then xs else xs \\ ys
 
---retorna true se a lista passada só possui um elemento
+-- Retorna true se a lista passada só possui um elemento
 single :: [a] -> Bool
 single [_] = True
 single _ = False
 
+-- Recebe uma matriz de escolhas e a matriz de posições.
+-- Retorna uma lista que contém soluções válidas para o tabuleiro.
+-- A ideia desse algoritmo é de que filtre todas as escolhas possíveis, uma célula por vez,
+-- e retorne somente matrizes que contém escolhas válidas.
 search :: Matrix Choices -> Grid -> [Grid]
-search m pos
-    | blocked m pos = []
-    | all (all single) m = collapse m
-    | otherwise = [g | m' <- expand m, g <- search (prune m' pos) pos]
+search vals pos
+    -- nao retorna nada se a matriz de escolhas passada não pode fornecer uma solução
+    | blocked vals pos = []
+    -- se a matriz de escolhas passada é válida e só contém valores unitários, é uma solução,
+    -- portanto, extrai o valor de cada lista de escolhas e retorna.
+    | all (all single) vals = [map concat vals]
+    -- se a matriz de escolhas passada é valida e contém mais de uma escolha para pelo menos uma célula,
+    -- expande a matriz, reduz o número de escolhas restantes e continua o processo de busca sobre ela.
+    | otherwise = [g | vals' <- expand vals, g <- search (prune vals' pos) pos]
 
--- matrizes bloqueadas nunca podem fornecer uma solução
+-- Recebe uma matriz de escolhas e a matriz de posições.
+-- Retorna true se a matriz de escolhas passada nunca pode fornecer uma solução.
 blocked :: Matrix Choices -> Grid -> Bool
-blocked m pos = void m || not (safe m pos)
+blocked vals pos = void vals || not (safe vals pos)
 
--- verifica se ha alguma celula vazia na matriz
+-- Verifica se ha alguma celula vazia na matriz
 void :: Matrix Choices -> Bool
 void m = any (any null) m
 
--- verifica se todos os campos sao consistentes (nao possuem valores unitarios duplicados)
+-- Recebe uma matriz de escolhas e a matriz de posições.
+-- Retorna true se as matrizes passam nos seguintes testes:
+-- -- Cada célula não possui vizinhos com o mesmo valor;
+-- -- Cada bloco não possui valores duplicados;
+-- -- Cada bloco respeita a ordem de valores decrescentes na vertical.
 safe :: Matrix Choices -> Grid -> Bool
-safe m pos = all (validNeighborhood) (cols m) &&
-        all (validNeighborhood) (rows m) &&
-        all (nodups) (blocks m pos) &&
-        all (isDecreasing) (blocks2 m pos)
+safe vals pos = all (validNeighborhood) (cols vals) &&
+        all (validNeighborhood) (rows vals) &&
+        all (nodups) (blocks vals pos) &&
+        all (isDecreasing) (blocksByCols vals pos)
 
--- verifica se nao ha valores vizinhos iguais
+-- Verifica se nao ha valores unitarios vizinhos iguais
 validNeighborhood :: Eq a => Row [a] -> Bool
 validNeighborhood [] = True
 validNeighborhood [a] = True
@@ -78,12 +82,12 @@ validNeighborhood (a:b:bs)
     | (length a <= 1) && (length b <= 1) = if a == b then False else validNeighborhood (b:bs)
     | otherwise = validNeighborhood (b:bs)
 
--- verifica se não há valores unitarios duplicados na linha passada
+-- Verifica se não há valores unitarios duplicados na linha passada
 nodups :: Eq a => Row [a] -> Bool
 nodups [] = True
 nodups (x:xs) = if (length x <= 1) then not (elem x xs) && nodups xs else nodups xs
 
--- verifica se nao ha valores vizinhos iguais
+-- Verifica se os valores unitários da linha passada estão em ordem decrescente
 isDecreasing :: Ord a => Row [a] -> Bool
 isDecreasing [] = True
 isDecreasing [a] = True
@@ -91,37 +95,21 @@ isDecreasing (a:b:bs)
     | (length a <= 1) && (length b <= 1) = if a < b then False else isDecreasing (b:bs)
     | otherwise = isDecreasing (b:bs)
 
--- retorna uma lista contendo todas as matrizes de solução possíveis
-collapse :: Matrix [a] -> [Matrix a]
-collapse m = cp (map cp m)
-
--- retorna o produto cartesiano das listas de uma lista
--- ex: [[1, 2], [3, 4]] -> [[1, 3], [1, 4], [2, 3], [2, 4]]
-cp :: [[a]] -> [[a]]
-cp [] = [[]]
-cp (xs:xss) = [y:ys | y <- xs, ys <- cp xss]
-
---The function expand behaves in the same way as collapse, except that
---it only collapses the first square with more than one choice:
+-- Expand funciona de modo similar à collapse. A diferença é que faz o collapse
+-- apenas para a primeira célula que contém mais de uma escolha.
 expand :: Matrix Choices -> [Matrix Choices]
 expand m = [rows1 ++ [row1 ++ [c] : row2] ++ rows2 | c <- cs]
     where
         (rows1,row:rows2) = break (any (not . single)) m
-        (row1,cs:row2)    = break (not . single) row
-
-------------------------------------------------------------------------------
-
-------------------------------------------------------------------------------
--- validacao kojun:
--- verificar se elemento é igual ao proximo elemento na linha e coluna
--- verificar se há duplicados em um bloco
--- verificar se bloco respeita regra de verticalidade
-------------------------------------------------------------------------------
+        (row1,cs:row2) = break (not . single) row
 
 main = do
     board <- getLine
     (vals, pos) <- readPuzzle board
-    print $ solve vals pos
+    putStrLn "Resolvendo..."
+    let solutions = solve vals pos
+    putStrLn "Solucao:"
+    mapM_ print solutions
 
 
 
