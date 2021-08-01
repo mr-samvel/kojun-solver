@@ -6,7 +6,8 @@ import Data.List
 
 type Choices = [Value]
 
--- Solucao baseada na de Graham Hutton. Disponível em: http://www.cs.nott.ac.uk/~pszgmh/sudoku.lhs
+-- Solucao baseada na de Graham Hutton. 
+-- Disponível em: http://www.cs.nott.ac.uk/~pszgmh/sudoku.lhs
 
 -- Recebe a matriz de valores e de posições lida do documento de texto.
 -- Retorna a primeira solução encontrada para o tabuleiro.
@@ -106,6 +107,7 @@ expand m = [rows1 ++ [row1 ++ [c] : row2] ++ rows2 | c <- cs]
         (row1,cs:row2) = break (not . single) row
 
 main = do
+    putStrLn "Insira o documento que contém o tabuleiro (ex.: tabuleiros/tabuleiro10x10.txt):"
     board <- getLine
     (vals, pos) <- readPuzzle board
     putStrLn "Resolvendo..."
